@@ -8,7 +8,7 @@ Simple abstract class for typed Arras.
 
 To install the library, execute the following code:
 
-    composer require typedarray/typedarray master
+    composer require typedarray/typedarray
 
 ### Manual
 
