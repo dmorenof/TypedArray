@@ -1,0 +1,13 @@
+{
+  "autoload": {
+    "psr-4": {
+      "TypedArray\\": "src/"
+    },
+    "require": {
+      "php": ">=8"
+    }
+  },
+  "require": {
+    "ext-json": "*"
+  }
+}
