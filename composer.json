@@ -1,13 +1,21 @@
 {
+  "name": "typedarray/typedarray",
+  "description": "Simple typed Array abstraction class.",
+  "type": "package",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "David Moreno Falero",
+      "email": "david.moreno.falero@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.0",
+    "ext-json": "*"
+  },
   "autoload": {
     "psr-4": {
       "TypedArray\\": "src/"
-    },
-    "require": {
-      "php": ">=8"
     }
-  },
-  "require": {
-    "ext-json": "*"
   }
 }
