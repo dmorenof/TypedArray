@@ -78,7 +78,7 @@ use TypedArray\TypedArray;
 use Examples\MyCustomClass; // Assuming this class is defined elsewhere in your project
 
 class ClassTypeArray extends TypedArray {
-    protected string $expected_class = MyCustomClass::class;
+    protected string $expected_type = MyCustomClass::class;
 }
 
 $objectArray = new ClassTypeArray();
@@ -88,7 +88,7 @@ $object2 = new MyCustomClass();
 
 $objectArray[] = $object1; // Valid
 $objectArray[] = $object2; // Valid
-// $objectArray[] = new SomeOtherClass(); // This will throw an exception
+// $objectArray[] = new SomeOtherClass(); // This will throw a TypeError
 ```
 
 
