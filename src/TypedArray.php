@@ -24,6 +24,25 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     public function __construct(array $items = [])
     {
+        if (empty($this->expected_type)) {
+            throw new InvalidArgumentException('The expected type must be defined in the implementing class.');
+        }
+
+        if (!in_array($this->expected_type, [
+                "boolean",
+                "integer",
+                "double",
+                "string",
+                "array",
+                "object",
+                "resource",
+                "NULL",
+                "unknown type",
+                "resource (closed)",
+            ]) && !class_exists($this->expected_type)) {
+            throw new InvalidArgumentException('The expected type must be a valid primitive type or a class name.');
+        }
+
         foreach ($items as $item) {
             $this->validate($item);
         }
