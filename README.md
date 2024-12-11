@@ -31,3 +31,76 @@ Include all the files from the "installation path/src"
     }
     
     autoload($installation_path . DIRECTORY_SEPARATOR . 'src');
+
+## Examples of Usage
+
+Here are some examples demonstrating how to use the library:
+
+### Define a Custom Typed Array
+
+You can create your own typed array by extending the `TypedArray` class. For example:
+
+```php
+<?php
+use TypedArray\TypedArray;
+class IntegerArray extends TypedArray {
+    protected string $expected_type = 'integer';
+}
+$intArray = new IntegerArray();
+$intArray[] = 10; // Valid
+$intArray[] = 20; // Valid
+// $intArray[] = "Hello"; // This will throw a type error
+```
+
+### Work With Typed Maps
+
+You can also work with key-value pairs if you extend the library for typed maps:
+
+```php
+<?php
+use TypedArray\TypedArray;
+class StringMap extends TypedArray {
+    protected string $expected_type = 'string';
+}
+$map = new StringToIntMap();
+$map["key1"] = "Foo";
+$map["key2"] = "Hello World";
+// var_dump($map["key2"]); // Outputs "Hello World"
+```
+
+### Define a Typed Array of Class Type
+
+You can also create a typed array that accepts only objects of a specific class type. For example:
+
+```php
+<?php
+use TypedArray\TypedArray;
+use Examples\MyCustomClass; // Assuming this class is defined elsewhere in your project
+
+class ClassTypeArray extends TypedArray {
+    protected string $expected_class = MyCustomClass::class;
+}
+
+$objectArray = new ClassTypeArray();
+
+$object1 = new MyCustomClass();
+$object2 = new MyCustomClass();
+
+$objectArray[] = $object1; // Valid
+$objectArray[] = $object2; // Valid
+// $objectArray[] = new SomeOtherClass(); // This will throw an exception
+```
+
+
+### Handle Exceptions
+
+When a value does not meet the validation rules, an exception is thrown. You can handle it as follows:
+
+```php
+<?php
+try {
+    $intArray[] = "Invalid Value";
+} catch (TypeError $e) {
+    echo "Caught exception: " . $e->getMessage(); // Validation error message
+}
+```

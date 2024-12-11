@@ -3,7 +3,7 @@
 namespace TypedArray;
 
 use ArrayObject;
-use InvalidArgumentException;
+use TypeError;
 use JsonSerializable;
 
 /**
@@ -25,7 +25,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
     public function __construct(array $items = [])
     {
         if (empty($this->expected_type)) {
-            throw new InvalidArgumentException('The expected type must be defined in the implementing class.');
+            throw new TypeError('The expected type must be defined in the implementing class.');
         }
 
         if (!in_array($this->expected_type, [
@@ -40,7 +40,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
                 "unknown type",
                 "resource (closed)",
             ]) && !class_exists($this->expected_type)) {
-            throw new InvalidArgumentException('The expected type must be a valid primitive type or a class name.');
+            throw new TypeError('The expected type must be a valid primitive type or a class name.');
         }
 
         foreach ($items as $item) {
@@ -55,7 +55,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      *
      * @param mixed $value The value to validate.
      * @return void
-     * @throws InvalidArgumentException If the value doesn't match the expected type.
+     * @throws TypeError If the value doesn't match the expected type.
      */
     protected function validate(mixed $value): void
     {
@@ -63,10 +63,10 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
 
         if ($type_string === 'object' && $this->expected_type !== 'object') {
             if (!$value instanceof $this->expected_type) {
-                throw new InvalidArgumentException(sprintf('Incorrect array item. Must be of type %s, %s given.', $this->expected_type, get_class($value)));
+                throw new TypeError(sprintf('Incorrect array item. Must be of type %s, %s given.', $this->expected_type, get_class($value)));
             }
         } else if ($type_string !== $this->expected_type) {
-            throw new InvalidArgumentException(sprintf('Incorrect array item. Must be of type %s, %s given.', $this->expected_type, $type_string));
+            throw new TypeError(sprintf('Incorrect array item. Must be of type %s, %s given.', $this->expected_type, $type_string));
         }
     }
 
@@ -85,17 +85,13 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
     /**
      * Sets the value at the specified offset in the array.
      *
-     * @param mixed $key The key at which to set the value. Must be null, as keys aren't allowed.
+     * @param mixed $key The key at which to set the value.
      * @param mixed $value The value to set in the array, which will be validated.
      * @return void
-     * @throws InvalidArgumentException If a key other than null is provided.
+     * @throws TypeError If a key other than null is provided.
      */
     public function offsetSet(mixed $key, mixed $value): void
     {
-        if (!is_null($key)) {
-            throw new InvalidArgumentException('Keys are not allowed in a array.');
-        }
-
         $this->validate($value);
         parent::offsetSet($key, $value);
     }
