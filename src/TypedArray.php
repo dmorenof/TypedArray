@@ -44,10 +44,10 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
 
         if ($type_string === 'object' && $this->expected_type !== 'object') {
             if (!$value instanceof $this->expected_type) {
-                throw new InvalidArgumentException(sprintf('Incorrect array item the item must be of type %s, %s given.', $this->expected_type, get_class($value)));
+                throw new InvalidArgumentException(sprintf('Incorrect array item. Must be of type %s, %s given.', $this->expected_type, get_class($value)));
             }
         } else if ($type_string !== $this->expected_type) {
-            throw new InvalidArgumentException(sprintf('Incorrect array item the item must be of type %s, %s given.', $this->expected_type, $type_string));
+            throw new InvalidArgumentException(sprintf('Incorrect array item. Must be of type %s, %s given.', $this->expected_type, $type_string));
         }
     }
 
