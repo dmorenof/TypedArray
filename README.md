@@ -1,6 +1,6 @@
 # Simple Typed Array
 
-Simple abstract class for typed Arras.
+Simple abstract class for typed Arrays with a set of classes for the different basic types.
 
 ## Installation
 
@@ -33,44 +33,47 @@ Include all the files from the "installation path/src"
     autoload($installation_path . DIRECTORY_SEPARATOR . 'src');
 
 ## Examples of Usage
+Are you sick of typing your arrays with comments that are working in your IDEs, but your code still allows mixed values?
 
 Here are some examples demonstrating how to use the library:
 
 ### Define a Custom Typed Array
 
+Here is a simple solution to this problem.
+
+Instead of typing your arrays like:
+
+```php
+/* @var int[] */
+$my_int_array = [];
+```
+
 You can create your own typed array by extending the `TypedArray` class. For example:
 
 ```php
 <?php
-use TypedArray\TypedArray;
-class IntegerArray extends TypedArray {
-    protected string $expected_type = 'integer';
-}
+use TypedArray\IntegerArray;
+
 $intArray = new IntegerArray();
 $intArray[] = 10; // Valid
 $intArray[] = 20; // Valid
-// $intArray[] = "Hello"; // This will throw a type error
+// $intArray[] = "Hello"; // This will throw a TypeError
 ```
 
-### Work With Typed Maps
+Default valid types are:
+- TypedArray\ArrayArray 
+- TypedArray\BooleanArray
+- TypedArray\DoubleArray
+- TypedArray\IntegerArray
+- TypedArray\ObjectArray
+- TypedArray\ResourceArray
+- TypedArray\StringArray
 
-You can also work with key-value pairs if you extend the library for typed maps:
+## Working With Class Typed Arrays
 
-```php
-<?php
-use TypedArray\TypedArray;
-class StringMap extends TypedArray {
-    protected string $expected_type = 'string';
-}
-$map = new StringToIntMap();
-$map["key1"] = "Foo";
-$map["key2"] = "Hello World";
-// var_dump($map["key2"]); // Outputs "Hello World"
-```
+You can also create a typed array that accepts only objects of a specific class type.
 
-### Define a Typed Array of Class Type
-
-You can also create a typed array that accepts only objects of a specific class type. For example:
+Extend from TypedArray\TypedArray and pass the class::name to the protected property expected type. For example:
 
 ```php
 <?php
@@ -81,8 +84,8 @@ class ClassTypeArray extends TypedArray {
     protected string $expected_type = MyCustomClass::class;
 }
 
-$objectArray = new ClassTypeArray();
-
+/* @var MyCustomClass[] */
+$objectArray = new MyCustomClassArray();
 $object1 = new MyCustomClass();
 $object2 = new MyCustomClass();
 
@@ -91,16 +94,68 @@ $objectArray[] = $object2; // Valid
 // $objectArray[] = new SomeOtherClass(); // This will throw a TypeError
 ```
 
+Also works with extended classes
+```php
+<?php
+
+class User
+{
+    public string $name;
+    public string $email;
+
+    public function __construct(string $name, string $email)
+    {
+        $this->name = $name;
+        $this->email = $email;
+    }
+}
+
+class InvalidClass
+{
+}
+
+class AdminUser extends User
+{
+}
+
+class UserArray extends TypedArray
+{
+    protected string $expected_type = User::class;
+}
+
+// Example of usage without keys
+$userArray = new UserArray([
+    new User('John Doe', 'john@example.com'),
+    new User('Jane Smith', 'jane@example.com'),
+    new AdminUser('Admin User', 'admin@example.com'),
+]);
+
+$userArray[] = new User('Alice Johnson', 'alice@example.com');
+
+// Example of usage with keys
+$keyedUserArray = new UserArray([
+    'admin' => new AdminUser('Admin User', 'admin@example.com'),
+    'editor' => new User('Editor User', 'editor@example.com'),
+]);
+
+$keyedUserArray['viewer'] = new User('Viewer User', 'viewer@example.com');
+
+// Example of invalid value
+$invalidUserArray = new UserArray([
+    'invalid-value', // This will throw a TypeError
+    new InvalidClass(), // This will throw a TypeError 
+]);
+```
 
 ### Handle Exceptions
 
-When a value does not meet the validation rules, an exception is thrown. You can handle it as follows:
+When a value doesn't meet the validation rules, an exception is thrown. You can handle it as follows:
 
 ```php
 <?php
 try {
     $intArray[] = "Invalid Value";
-} catch (TypeError $e) {
-    echo "Caught exception: " . $e->getMessage(); // Validation error message
+} catch (TypeError $TypeError) {
+    echo "Caught exception: " . $TypeError->getMessage(); // Validation error message
 }
 ```
