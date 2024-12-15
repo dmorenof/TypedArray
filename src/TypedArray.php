@@ -3,8 +3,8 @@
 namespace TypedArray;
 
 use ArrayObject;
-use TypeError;
 use JsonSerializable;
+use TypeError;
 
 /**
  * An abstract class representing a type-safe array of items with enforced validations.
@@ -14,6 +14,18 @@ use JsonSerializable;
  */
 abstract class TypedArray extends ArrayObject implements JsonSerializable
 {
+    private const DEFAULT_PHP_TYPES = [
+        'boolean',
+        'integer',
+        'double',
+        'string',
+        'array',
+        'object',
+        'resource',
+        'NULL',
+        'unknown type',
+        'resource (closed)',
+    ];
     protected string $expected_type;
 
     /**
@@ -28,18 +40,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
             throw new TypeError('The expected type must be defined in the implementing class.');
         }
 
-        if (!in_array($this->expected_type, [
-                "boolean",
-                "integer",
-                "double",
-                "string",
-                "array",
-                "object",
-                "resource",
-                "NULL",
-                "unknown type",
-                "resource (closed)",
-            ]) && !class_exists($this->expected_type)) {
+        if (!in_array($this->expected_type, self::DEFAULT_PHP_TYPES) && !class_exists($this->expected_type)) {
             throw new TypeError('The expected type must be a valid primitive type or a class name.');
         }
 
@@ -59,15 +60,63 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     protected function validate(mixed $value): void
     {
-        $type_string = gettype($value);
+        $type = gettype($value);
 
-        if ($type_string === 'object' && $this->expected_type !== 'object') {
-            if (!$value instanceof $this->expected_type) {
-                throw new TypeError(sprintf('Incorrect array item. Must be of type %s, %s given.', $this->expected_type, get_class($value)));
-            }
-        } else if ($type_string !== $this->expected_type) {
-            throw new TypeError(sprintf('Incorrect array item. Must be of type %s, %s given.', $this->expected_type, $type_string));
+        /**
+         * Assuming that "resource" and "resource (closed)" are the same type if not specified otherwise
+         */
+        if ($type === 'resource (closed)' && $this->expected_type === 'resource (closed)') {
+            $type = 'resource';
         }
+
+        if ($this->isInvalidType($type, $value)) {
+            $actual_type = $type === 'object' && $this->expected_type !== 'object' ? get_class($value) : $type;
+            $this->throwTypeError($actual_type);
+        }
+    }
+
+    /**
+     * Checks whether the given type and value don't match the expected type.
+     *
+     * The method determines if the provided type is invalid based on the expected type.
+     * It cross-verifies against default PHP types or checks if the value is an instance
+     * of the expected class when dealing with objects.
+     *
+     * @param string $type The type of the value being checked.
+     * @param mixed $value The value to be validated against the expected type.
+     * @return bool Returns true if the type or value is invalid; otherwise, false.
+     * @throws TypeError
+     */
+    private function isInvalidType(string $type, mixed $value): bool
+    {
+        // If expected a default type
+        if (in_array($this->expected_type, self::DEFAULT_PHP_TYPES)) {
+            return $type !== $this->expected_type;
+        } else if ($type === 'object') {
+            return !($value instanceof $this->expected_type);
+        }
+
+        return true;
+    }
+
+    /**
+     * Throws a TypeError indicating that an array item doesn't match the expected type.
+     *
+     * Constructs an error message using the expected type and the actual type provided,
+     * then throws a TypeError with the formatted message.
+     *
+     * @param string $actual_type The type of the item if caused the error.
+     *
+     * @return void
+     * @throws TypeError
+     */
+    private function throwTypeError(string $actual_type): void
+    {
+        throw new TypeError(sprintf(
+            'Incorrect array item. Must be of type %s, %s given.',
+            $this->expected_type,
+            $actual_type
+        ));
     }
 
     /**
@@ -108,9 +157,17 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
         return (array)$this;
     }
 
+    /**
+     * Converts the current object to its string representation.
+     *
+     * To simulate the default behavior of an Array, triggers a Notice error
+     * and returns a string with the class name.
+     *
+     * @return string Returns the class name of the current object.
+     */
     public function __toString(): string
     {
-        trigger_error("Array to string conversion", E_USER_WARNING);
+        trigger_error('Array to string conversion', E_NOTICE);
         return get_class($this);
     }
 }
