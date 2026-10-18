@@ -168,4 +168,17 @@ Released under the [MIT License](LICENSE). Copyright (c) 2024-2026 David Moreno 
 
 Contributions and bug reports are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the branching workflow, compatibility expectations, and local checks.
 
-The stable Composer package is currently `typedarray/typedarray`. The `master` branch and Git version tags are used for stable releases; `develop` is used for ongoing development. Automated tests and CI/CD are planned and are not yet configured.
+The stable Composer package is currently `typedarray/typedarray`. The `master` branch and Git version tags are used for stable releases; `develop` is used for ongoing development. Automated PHPUnit tests and continuous integration are configured on `develop`. A controlled release/publishing workflow is planned but is not yet configured.
+
+## Tests and continuous integration
+
+Install development dependencies and run the PHPUnit suite:
+
+```bash
+composer install
+composer test
+```
+
+The [CI workflow](.github/workflows/ci.yml) validates Composer metadata, checks PHP syntax, and runs PHPUnit on PHP 8.0 through 8.5 for pushes and pull requests targeting `develop` or `master`.
+
+The test suite currently includes explicit **skipped regression tests** in [KnownLimitationsTest.php](tests/KnownLimitationsTest.php) for unresolved mutation and serialization paths inherited from `ArrayObject` and for string conversion. Those scenarios are known limitations, **not passing guarantees**. They will be enabled as they are fixed. The implementation in `src/` has not been changed as part of this test-suite setup.
