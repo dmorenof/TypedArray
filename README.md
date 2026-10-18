@@ -1,6 +1,18 @@
-# Simple Typed Array
+# PHP Typed Array
+
+[![CI](https://github.com/dmorenof/TypedArray/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/dmorenof/TypedArray/actions/workflows/ci.yml)
+[![Packagist](https://img.shields.io/packagist/v/typedarray/typedarray)](https://packagist.org/packages/typedarray/typedarray)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 
 Simple abstract class for typed Arrays with a set of classes for the different basic types.
+
+> **Package-name migration:** The development branch declares the future Composer
+> package name `php-typed-array/php-typed-array`. The currently published
+> stable 1.0.2 remains `typedarray/typedarray` until the new package is
+> registered and released on Packagist. Do not install the new name until it is live.
+>
+> The PHP namespace stays `TypedArray\\` so existing application code remains compatible.
 
 ## Installation
 
@@ -159,3 +171,36 @@ try {
     echo "Caught exception: " . $TypeError->getMessage(); // Validation error message
 }
 ```
+
+## License
+
+Released under the [MIT License](LICENSE). Copyright (c) 2024-2026 David Moreno Falero.
+
+## Contributing and maintenance
+
+Contributions and bug reports are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the branching workflow, compatibility expectations, and local checks.
+
+The stable Composer package is currently `typedarray/typedarray`. The `master` branch and Git version tags are used for stable releases; `develop` is used for ongoing development. Automated PHPUnit tests and continuous integration are configured on `develop`. A controlled release/publishing workflow is planned but is not yet configured.
+
+## Tests and continuous integration
+
+Install development dependencies and run the PHPUnit suite:
+
+```bash
+composer install
+composer test
+```
+
+The [CI workflow](.github/workflows/ci.yml) validates Composer metadata, checks PHP syntax, and runs PHPUnit on PHP 8.0 through 8.5 for pushes and pull requests targeting `develop` or `master`.
+
+The test suite includes [KnownLimitationsTest.php](tests/KnownLimitationsTest.php). Some regression tests have been enabled after fixes; the remaining skipped tests document writable iterators that bypass `ArrayObject` subclass validation. See [compatibility and limitations](docs/compatibility.md).
+
+## More documentation
+
+- [Typed SDK object collections](docs/custom-types.md)
+- [Compatibility and type-safety limits](docs/compatibility.md)
+- [Maintainer release process](docs/releasing.md)
+- [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+
+Run `composer analyse` for static analysis. CI enforces at least 95% line coverage of the currently included source and generates a downloadable coverage report. The [CI workflow](.github/workflows/ci.yml) reports the authoritative status for each PHP version.
