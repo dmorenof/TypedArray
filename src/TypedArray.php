@@ -69,7 +69,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
         $type = gettype($value);
 
         if ($this->isInvalidType($type, $value)) {
-            $actual_type = $type === 'object' && $this->expected_type !== 'object' ? get_class($value) : $type;
+            $actual_type = $type === 'object' && $this->expected_type !== 'object' ? get_debug_type($value) : $type;
             $this->throwTypeError($actual_type);
         }
     }

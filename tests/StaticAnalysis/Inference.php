@@ -19,10 +19,10 @@ final class CustomerArray extends TypedArray
 }
 
 $integers = new IntegerArray([1, 2, 3]);
-assertType('int', $integers[0]);
+assertType('int|null', $integers[0]);
 
 $strings = new StringArray(['a', 'b']);
-assertType('string', $strings[0]);
+assertType('string|null', $strings[0]);
 
 $customers = new CustomerArray([new Customer(), new VipCustomer()]);
-assertType(Customer::class, $customers[0]);
+assertType(Customer::class . '|null', $customers[0]);
