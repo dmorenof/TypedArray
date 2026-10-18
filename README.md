@@ -48,7 +48,7 @@ Instead of typing your arrays like:
 $my_int_array = [];
 ```
 
-You can create your own typed array by extending the `TypedArray` class. For example:
+You can select a default typed array. For example:
 
 ```php
 <?php
@@ -80,7 +80,7 @@ Extend from TypedArray\TypedArray and pass the class::name to the protected prop
 use TypedArray\TypedArray;
 use Examples\MyCustomClass; // Assuming this class is defined elsewhere in your project
 
-class ClassTypeArray extends TypedArray {
+class MyCustomClassArray extends TypedArray {
     protected string $expected_type = MyCustomClass::class;
 }
 
