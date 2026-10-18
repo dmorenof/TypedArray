@@ -159,3 +159,13 @@ try {
     echo "Caught exception: " . $TypeError->getMessage(); // Validation error message
 }
 ```
+
+## License
+
+Released under the [MIT License](LICENSE). Copyright (c) 2024-2026 David Moreno Falero.
+
+## Contributing and maintenance
+
+Contributions and bug reports are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the branching workflow, compatibility expectations, and local checks.
+
+The stable Composer package is currently `typedarray/typedarray`. The `master` branch and Git version tags are used for stable releases; `develop` is used for ongoing development. Automated tests and CI/CD are planned and are not yet configured.
