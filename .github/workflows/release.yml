@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semantic version (e.g. 1.0.3), without v prefix'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stable-release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/master'
+    name: Verify PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          extensions: dom, json, libxml, mbstring, xml, xmlwriter
+          tools: composer:v2
+      - name: Validate package
+        run: composer validate --strict
+      - name: Install and test
+        run: |
+          composer update --prefer-dist --no-interaction --no-progress
+          vendor/bin/phpunit --configuration phpunit.xml
+
+  release:
+    name: Publish approved tag and GitHub release
+    needs: [verify]
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check input and branch head
+        shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Use SemVer MAJOR.MINOR.PATCH without prefixes or suffixes" >&2
+            exit 1
+          fi
+          CURRENT=$(git ls-remote origin refs/heads/master | cut -f1)
+          if [[ "$CURRENT" != "$GITHUB_SHA" ]]; then
+            echo "master advanced while validating; rerun from its new head" >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null; then
+            echo "Release tag already exists" >&2
+            exit 1
+          fi
+      - name: Create release and tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh release create "$VERSION" --target "$GITHUB_SHA" --title "$VERSION" --generate-notes

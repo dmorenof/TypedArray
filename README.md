@@ -181,4 +181,14 @@ composer test
 
 The [CI workflow](.github/workflows/ci.yml) validates Composer metadata, checks PHP syntax, and runs PHPUnit on PHP 8.0 through 8.5 for pushes and pull requests targeting `develop` or `master`.
 
-The test suite currently includes explicit **skipped regression tests** in [KnownLimitationsTest.php](tests/KnownLimitationsTest.php) for unresolved mutation and serialization paths inherited from `ArrayObject` and for string conversion. Those scenarios are known limitations, **not passing guarantees**. They will be enabled as they are fixed. The implementation in `src/` has not been changed as part of this test-suite setup.
+The test suite includes [KnownLimitationsTest.php](tests/KnownLimitationsTest.php). Some regression tests have been enabled after fixes; the remaining skipped tests document writable iterators that bypass `ArrayObject` subclass validation. See [compatibility and limitations](docs/compatibility.md).
+
+## More documentation
+
+- [Typed SDK object collections](docs/custom-types.md)
+- [Compatibility and type-safety limits](docs/compatibility.md)
+- [Maintainer release process](docs/releasing.md)
+- [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+
+Run `composer analyse` for static analysis. CI also generates a downloadable coverage report. The [CI workflow](.github/workflows/ci.yml) reports the authoritative status for each PHP version.

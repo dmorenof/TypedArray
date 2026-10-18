@@ -46,3 +46,39 @@ jobs:
 
       - name: Run PHPUnit
         run: vendor/bin/phpunit --configuration phpunit.xml
+
+  static-analysis:
+    name: PHPStan / PHP 8.4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+      - name: Analyse source
+        run: composer analyse
+
+  coverage:
+    name: Code coverage / PHP 8.4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: xdebug
+          tools: composer:v2
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+      - name: Generate coverage report
+        run: vendor/bin/phpunit --configuration phpunit.xml --coverage-filter src --coverage-clover coverage.xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpunit-coverage-php84
+          path: coverage.xml
+          retention-days: 14
