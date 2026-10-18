@@ -1,4 +1,9 @@
-# Simple Typed Array
+# PHP Typed Array
+
+[![CI](https://github.com/dmorenof/TypedArray/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/dmorenof/TypedArray/actions/workflows/ci.yml)
+[![Packagist](https://img.shields.io/packagist/v/typedarray/typedarray)](https://packagist.org/packages/typedarray/typedarray)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 
 Simple abstract class for typed Arrays with a set of classes for the different basic types.
 
@@ -191,4 +196,4 @@ The test suite includes [KnownLimitationsTest.php](tests/KnownLimitationsTest.ph
 - [Security policy](SECURITY.md)
 - [Changelog](CHANGELOG.md)
 
-Run `composer analyse` for static analysis. CI also generates a downloadable coverage report. The [CI workflow](.github/workflows/ci.yml) reports the authoritative status for each PHP version.
+Run `composer analyse` for static analysis. CI enforces at least 95% line coverage of the currently included source and generates a downloadable coverage report. The [CI workflow](.github/workflows/ci.yml) reports the authoritative status for each PHP version.

@@ -8,7 +8,7 @@ All notable changes will be documented here. Version numbering follows [Semantic
 - MIT license and contribution/security policies.
 - PHPUnit regression suite with a PHP 8.0–8.5 CI matrix.
 - PHPDoc generics for typed collections and initial PHPStan analysis.
-- Coverage report generation and Dependabot configuration.
+- Coverage report generation, minimum coverage enforcement, static-analysis type inference checks, and Dependabot configuration.
 
 ### Fixed in development
 - Type validation before `exchangeArray()` replaces items.

@@ -76,6 +76,8 @@ jobs:
         run: composer update --prefer-dist --no-interaction --no-progress
       - name: Generate coverage report
         run: vendor/bin/phpunit --configuration phpunit.xml --coverage-filter src --coverage-clover coverage.xml --coverage-text
+      - name: Enforce minimum code coverage
+        run: php tools/check-coverage.php coverage.xml 95
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v5
         with:

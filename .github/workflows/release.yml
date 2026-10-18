@@ -38,6 +38,7 @@ jobs:
         run: |
           composer update --prefer-dist --no-interaction --no-progress
           vendor/bin/phpunit --configuration phpunit.xml
+          if [[ "${{ matrix.php }}" == "8.4" ]]; then composer analyse; fi
 
   release:
     name: Publish approved tag and GitHub release
