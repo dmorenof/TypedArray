@@ -171,7 +171,13 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     public function __unserialize(array $data): void
     {
+        // Subclasses normally declare a default expected_type. Preserve this
+        // contract even if the serialized properties have been tampered with.
+        $declaredType = $this->expected_type;
         parent::__unserialize($data);
+        if ($this->expected_type !== $declaredType) {
+            throw new TypeError('Cannot change the expected array type during unserialization.');
+        }
 
         foreach ($this->getArrayCopy() as $item) {
             $this->validate($item);
@@ -183,7 +189,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      *
      * Converts the current object into an array structure suitable for JSON encoding.
      *
-     * @return array Returns an associative array representation of the object.
+     * @return array<array-key, TValue> Returns the array contents.
      */
     public function jsonSerialize(): array
     {

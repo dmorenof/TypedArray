@@ -24,7 +24,7 @@ jobs:
         php: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -51,7 +51,7 @@ jobs:
     name: PHPStan / PHP 8.4
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
@@ -66,7 +66,7 @@ jobs:
     name: Code coverage / PHP 8.4
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
@@ -75,9 +75,9 @@ jobs:
       - name: Install dependencies
         run: composer update --prefer-dist --no-interaction --no-progress
       - name: Generate coverage report
-        run: vendor/bin/phpunit --configuration phpunit.xml --coverage-filter src --coverage-clover coverage.xml
+        run: vendor/bin/phpunit --configuration phpunit.xml --coverage-filter src --coverage-clover coverage.xml --coverage-text
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: phpunit-coverage-php84
           path: coverage.xml

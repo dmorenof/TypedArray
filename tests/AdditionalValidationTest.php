@@ -61,6 +61,20 @@ final class AdditionalValidationTest extends TestCase
         self::assertSame($handle, $closed[0]);
     }
 
+
+    public function testSerializationCannotReplaceDeclaredType(): void
+    {
+        $original = new IntegerArray([1]);
+        $serialized = $original->__serialize();
+        self::assertArrayHasKey(2, $serialized);
+        self::assertIsArray($serialized[2]);
+        $serialized[2]["\0*\0expected_type"] = 'string';
+
+        $restored = new IntegerArray();
+        $this->expectException(TypeError::class);
+        $restored->__unserialize($serialized);
+    }
+
     public function testInvalidExchangeArrayFromObject(): void
     {
         $items = new IntegerArray([1]);
