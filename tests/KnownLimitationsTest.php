@@ -17,8 +17,6 @@ final class KnownLimitationsTest extends TestCase
 {
     public function testExchangeArrayRejectsValuesOfTheWrongType(): void
     {
-        $this->markTestSkipped('Known issue: inherited exchangeArray() bypasses validate().');
-
         $numbers = new IntegerArray([1]);
         $this->expectException(TypeError::class);
         $numbers->exchangeArray(['wrong']);
@@ -46,10 +44,8 @@ final class KnownLimitationsTest extends TestCase
 
     public function testUnserializationCannotInjectWrongTypes(): void
     {
-        $this->markTestSkipped('Known issue: restoring serialized ArrayObject state can bypass validation.');
-
-        $numbers = new IntegerArray([1]);
-        $payload = str_replace('i:1;', 's:5:"wrong";', serialize($numbers));
+        $numbers = new IntegerArray([777777]);
+        $payload = str_replace('i:777777;', 's:5:"wrong";', serialize($numbers));
         self::assertNotSame(serialize($numbers), $payload);
         $this->expectException(TypeError::class);
         unserialize($payload, ['allowed_classes' => true]);
@@ -57,8 +53,6 @@ final class KnownLimitationsTest extends TestCase
 
     public function testCastingToStringDoesNotRaiseValueError(): void
     {
-        $this->markTestSkipped('Known issue: __toString() passes E_NOTICE to trigger_error(), which requires a user error level.');
-
         $numbers = new IntegerArray([1]);
         self::assertIsString((string) $numbers);
     }

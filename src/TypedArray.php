@@ -9,8 +9,14 @@ use TypeError;
 /**
  * An abstract class representing a type-safe array of items with enforced validations.
  *
- * This class extends ArrayObject and ensures that all items in the array
- * comply with the expected type defined in the implementing class.
+ * This class extends ArrayObject and validates items through its public write methods.
+ *
+ * IMPORTANT: Inherited SPL iteration wrappers can access ArrayObject's native
+ * storage directly. Until a future major version replaces that storage, this
+ * class cannot guarantee type safety for arbitrary external ArrayIterator wrappers.
+ *
+ * @template TValue
+ * @extends ArrayObject<array-key, TValue>
  */
 abstract class TypedArray extends ArrayObject implements JsonSerializable
 {
@@ -31,7 +37,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
     /**
      * Constructor method for the class.
      *
-     * @param array $items An optional array of items to initialize and validate.
+     * @param array<array-key, TValue> $items An optional array of items to initialize and validate.
      * @return void
      */
     public function __construct(array $items = [])
@@ -40,8 +46,8 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
             throw new TypeError('The expected type must be defined in the implementing class.');
         }
 
-        if (!in_array($this->expected_type, self::DEFAULT_PHP_TYPES) && !class_exists($this->expected_type)) {
-            throw new TypeError('The expected type must be a valid primitive type or a class name.');
+        if (!in_array($this->expected_type, self::DEFAULT_PHP_TYPES) && !class_exists($this->expected_type) && !interface_exists($this->expected_type)) {
+            throw new TypeError('The expected type must be a valid primitive type, class name, or interface name.');
         }
 
         foreach ($items as $item) {
@@ -61,13 +67,6 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
     protected function validate(mixed $value): void
     {
         $type = gettype($value);
-
-        /**
-         * Assuming that "resource" and "resource (closed)" are the same type if not specified otherwise
-         */
-        if ($type === 'resource (closed)' && $this->expected_type === 'resource (closed)') {
-            $type = 'resource';
-        }
 
         if ($this->isInvalidType($type, $value)) {
             $actual_type = $type === 'object' && $this->expected_type !== 'object' ? get_class($value) : $type;
@@ -122,7 +121,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
     /**
      * Append a value to the array.
      *
-     * @param mixed $value The value to be validated and appended to the array.
+     * @param TValue $value The value to be validated and appended to the array.
      * @return void
      */
     public function append(mixed $value): void
@@ -135,14 +134,48 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      * Sets the value at the specified offset in the array.
      *
      * @param mixed $key The key at which to set the value.
-     * @param mixed $value The value to set in the array, which will be validated.
+     * @param TValue $value The value to set in the array, which will be validated.
      * @return void
-     * @throws TypeError If a key other than null is provided.
+     * @throws TypeError If the value does not have the expected type.
      */
     public function offsetSet(mixed $key, mixed $value): void
     {
         $this->validate($value);
         parent::offsetSet($key, $value);
+    }
+
+
+    /**
+     * Validates every value before replacing the backing array.
+     *
+     * @param array<array-key, TValue>|object $array
+     * @return array<array-key, TValue> The previous contents.
+     */
+    public function exchangeArray(array|object $array): array
+    {
+        $items = is_array($array)
+            ? $array
+            : ($array instanceof \Traversable ? iterator_to_array($array) : (array) $array);
+
+        foreach ($items as $item) {
+            $this->validate($item);
+        }
+
+        return parent::exchangeArray($items);
+    }
+
+    /**
+     * Validates the native ArrayObject serialization format on restoration.
+     *
+     * @param array<mixed> $data
+     */
+    public function __unserialize(array $data): void
+    {
+        parent::__unserialize($data);
+
+        foreach ($this->getArrayCopy() as $item) {
+            $this->validate($item);
+        }
     }
 
     /**
@@ -160,14 +193,13 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
     /**
      * Converts the current object to its string representation.
      *
-     * To simulate the default behavior of an Array, triggers a Notice error
-     * and returns a string with the class name.
+     * Returns the class name; triggering E_NOTICE via trigger_error() is
+     * unsupported and raises ValueError on modern PHP versions.
      *
      * @return string Returns the class name of the current object.
      */
     public function __toString(): string
     {
-        trigger_error('Array to string conversion', E_NOTICE);
         return get_class($this);
     }
 }
