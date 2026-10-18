@@ -1,5 +1,5 @@
 {
-  "name": "typedarray/typedarray",
+  "name": "php-typed-array/php-typed-array",
   "description": "Runtime-validated typed collections for PHP 8+, including scalar values, arrays, and class instances.",
   "type": "library",
   "keywords": [

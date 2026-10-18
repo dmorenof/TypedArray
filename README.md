@@ -7,6 +7,13 @@
 
 Simple abstract class for typed Arrays with a set of classes for the different basic types.
 
+> **Package-name migration:** The development branch declares the future Composer
+> package name `php-typed-array/php-typed-array`. The currently published
+> stable 1.0.2 remains `typedarray/typedarray` until the new package is
+> registered and released on Packagist. Do not install the new name until it is live.
+>
+> The PHP namespace stays `TypedArray\\` so existing application code remains compatible.
+
 ## Installation
 
 ### Composer

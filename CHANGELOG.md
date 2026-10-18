@@ -5,6 +5,7 @@ All notable changes will be documented here. Version numbering follows [Semantic
 ## Unreleased (`develop`)
 
 ### Added
+- Staged Composer package identity `php-typed-array/php-typed-array` (not published yet).
 - MIT license and contribution/security policies.
 - PHPUnit regression suite with a PHP 8.0–8.5 CI matrix.
 - PHPDoc generics for typed collections and initial PHPStan analysis.

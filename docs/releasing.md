@@ -17,4 +17,4 @@ The workflow requests write access only in the final release job; checks use rea
 
 ## Proposed package rename
 
-The preferred future Composer package name is `php-typed-array/php-typed-array` and the preferred repository URL is `dmorenof/php-typed-array`. This requires confirming availability, changing `composer.json` in the appropriate release, registering a new Packagist package, and marking the old package as abandoned with a replacement pointer. **Do not** delete the old package or old tags, as existing consumers may still depend on them.
+The new name `php-typed-array/php-typed-array` has been staged in the development Composer metadata, but has **not** been published. The preferred repository URL remains `dmorenof/php-typed-array` after a GitHub rename. Confirm Packagist availability and ownership, rename the GitHub repository, verify the new URL in Composer and documentation, register the new package, and then mark the old package as abandoned with a replacement pointer **only after the new stable release is available**. **Do not** delete the old package or old tags, as existing consumers may still depend on them.
