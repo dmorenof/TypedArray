@@ -21,6 +21,7 @@ You will need PHP 8.0 or later and Composer.
 ```sh
 composer install
 composer validate --strict
+composer test
 php examples/string.php
 php examples/boolean.php
 php examples/class.php
@@ -28,7 +29,7 @@ php examples/class.php
 
 The examples include deliberately invalid inserts and catch the resulting error. An error message at the end of an example is therefore expected.
 
-An automated PHPUnit suite and CI checks are planned but are **not yet present** in the repository. Do not treat the example scripts as a substitute for regression tests.
+Run `composer test` to execute the PHPUnit suite. GitHub Actions runs the same tests across PHP 8.0–8.5 on pushes and pull requests to `develop` and `master`. The `KnownLimitationsTest` suite deliberately marks currently unfixed issues as skipped; skipped tests are not evidence that the issue is fixed. Enable each regression test when the implementation is corrected.
 
 ## Reporting issues
 
