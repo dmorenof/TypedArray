@@ -1,7 +1,16 @@
 {
   "name": "typedarray/typedarray",
-  "description": "Simple typed Array abstraction class.",
-  "type": "package",
+  "description": "Runtime-validated typed collections for PHP 8+, including scalar values, arrays, and class instances.",
+  "type": "library",
+  "keywords": [
+    "typed-array",
+    "typed-collection",
+    "type-safety",
+    "arrayobject",
+    "php8",
+    "sdk"
+  ],
+  "homepage": "https://github.com/dmorenof/TypedArray",
   "license": "MIT",
   "authors": [
     {
@@ -9,6 +18,10 @@
       "email": "david.moreno.falero@gmail.com"
     }
   ],
+  "support": {
+    "issues": "https://github.com/dmorenof/TypedArray/issues",
+    "source": "https://github.com/dmorenof/TypedArray"
+  },
   "require": {
     "php": ">=8.0",
     "ext-json": "*"
