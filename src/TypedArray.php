@@ -42,6 +42,17 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     public function __construct(array $items = [])
     {
+        $this->validateExpectedType();
+
+        foreach ($items as $item) {
+            $this->validate($item);
+        }
+
+        parent::__construct($items);
+    }
+
+    private function validateExpectedType(): void
+    {
         if (empty($this->expected_type)) {
             throw new TypeError('The expected type must be defined in the implementing class.');
         }
@@ -49,12 +60,6 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
         if (!in_array($this->expected_type, self::DEFAULT_PHP_TYPES) && !class_exists($this->expected_type) && !interface_exists($this->expected_type)) {
             throw new TypeError('The expected type must be a valid primitive type, class name, or interface name.');
         }
-
-        foreach ($items as $item) {
-            $this->validate($item);
-        }
-
-        parent::__construct($items);
     }
 
     /**
@@ -171,11 +176,23 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     public function __unserialize(array $data): void
     {
-        // Subclasses normally declare a default expected_type. Preserve this
-        // contract even if the serialized properties have been tampered with.
-        $declaredType = $this->expected_type;
+        // Restore into an isolated instance so validation failures cannot alter
+        // this object's storage, properties, flags, or iterator class. Avoid
+        // invoking subclass constructors or clone hooks during restoration.
+        $restored = (new \ReflectionClass($this))->newInstanceWithoutConstructor();
+        $restored->validateSerializedData($data, $this->expected_type ?? null);
         parent::__unserialize($data);
-        if ($this->expected_type !== $declaredType) {
+    }
+
+    /** @param array<mixed> $data */
+    private function validateSerializedData(array $data, ?string $declaredType): void
+    {
+        parent::__unserialize($data);
+        $this->validateExpectedType();
+
+        // Constructor-defined types are uninitialized during native
+        // unserialization; their valid definition must come from the payload.
+        if ($declaredType !== null && $this->expected_type !== $declaredType) {
             throw new TypeError('Cannot change the expected array type during unserialization.');
         }
 
