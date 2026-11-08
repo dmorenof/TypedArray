@@ -1,6 +1,21 @@
-# Simple Typed Array
+# PHP Typed Array
 
-Simple abstract class for typed Arrays with a set of classes for the different basic types.
+[![CI](https://github.com/dmorenof/TypedArray/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/dmorenof/TypedArray/actions/workflows/ci.yml)
+[![Packagist](https://img.shields.io/packagist/v/typedarray/typedarray)](https://packagist.org/packages/typedarray/typedarray)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+
+ArrayObject-based typed collections for PHP 8+, validating construction and explicit writes. Native SPL iterator writes and `foreach` by reference can change the stored type without validation; see the [runtime validation contract](docs/compatibility.md).
+
+> **Package-name migration:** The development branch declares the future Composer
+> package name `php-typed-array/php-typed-array`. The currently published
+> stable 1.0.2 remains `typedarray/typedarray` until the new package is
+> registered and released on Packagist. Do not install the new name until it is live.
+>
+> The PHP namespace stays `TypedArray\\` so existing application code remains compatible.
+> The new package stages Composer's `replace: { "typedarray/typedarray": "self.version" }`
+> for compatible consumers; see the [release and migration plan](docs/releasing.md).
+> Consumers are not migrated automatically.
 
 ## Installation
 
@@ -159,3 +174,36 @@ try {
     echo "Caught exception: " . $TypeError->getMessage(); // Validation error message
 }
 ```
+
+## License
+
+Released under the [MIT License](LICENSE). Copyright (c) 2024-2026 David Moreno Falero.
+
+## Contributing and maintenance
+
+Contributions and bug reports are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the branching workflow, compatibility expectations, and local checks.
+
+The stable Composer package is currently `typedarray/typedarray`. The `master` branch and Git version tags are used for stable releases; `develop` is used for ongoing development. Automated PHPUnit tests and continuous integration are configured on `develop`. A manual release workflow is staged on `develop`; production publication requires branch protections, a protected release environment and explicit approval.
+
+## Tests and continuous integration
+
+Install development dependencies and run the PHPUnit suite:
+
+```bash
+composer install
+composer test
+```
+
+The [CI workflow](.github/workflows/ci.yml) validates Composer metadata, checks PHP syntax, and runs PHPUnit on PHP 8.0 through 8.5 for pushes and pull requests targeting `develop` or `master`.
+
+The [KnownLimitationsTest.php](tests/KnownLimitationsTest.php) suite documents the intentionally writable SPL paths with executable tests: `getIterator()`, external `ArrayIterator` wrappers, and `foreach` by reference. The [runtime validation contract](docs/compatibility.md) defines exactly which writes are checked.
+
+## More documentation
+
+- [Typed SDK object collections](docs/custom-types.md)
+- [Compatibility and type-safety limits](docs/compatibility.md)
+- [Maintainer release process](docs/releasing.md)
+- [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+
+Run `composer analyse` for static analysis. CI enforces at least 95% line coverage of the currently included source and generates a downloadable coverage report. The [CI workflow](.github/workflows/ci.yml) reports the authoritative status for each PHP version.
