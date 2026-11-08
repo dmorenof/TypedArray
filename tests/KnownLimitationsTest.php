@@ -10,8 +10,11 @@ use TypeError;
 use TypedArray\IntegerArray;
 
 /**
- * Regression specifications for known holes in ArrayObject inheritance.
- * These tests must be enabled as each issue is fixed; skipped != fixed.
+ * Contract tests for native SPL write-through interoperability.
+ *
+ * TypedArray validates its own write methods, but ArrayObject iterators and
+ * foreach-by-reference can mutate native storage without invoking them.
+ * Those native behaviors remain intentionally supported in compatible 1.x.
  */
 final class KnownLimitationsTest extends TestCase
 {
@@ -22,24 +25,44 @@ final class KnownLimitationsTest extends TestCase
         $numbers->exchangeArray(['wrong']);
     }
 
-    public function testIteratorCannotMutateUnderlyingTypedStorage(): void
+    public function testGetIteratorAllowsNativeWritesWithoutTypeValidation(): void
     {
-        $this->markTestSkipped('Known issue: getIterator() exposes writable storage.');
-
         $numbers = new IntegerArray([1]);
         $iterator = $numbers->getIterator();
         $iterator[0] = 'wrong';
-        self::assertSame(1, $numbers[0]);
+
+        self::assertSame('wrong', $numbers[0]);
     }
 
-    public function testExternalArrayIteratorCannotMutateUnderlyingTypedStorage(): void
+    public function testExternalArrayIteratorAllowsNativeWritesWithoutTypeValidation(): void
     {
-        $this->markTestSkipped('Known issue: constructing an ArrayIterator from an ArrayObject exposes writable storage.');
-
         $numbers = new IntegerArray([1]);
         $iterator = new ArrayIterator($numbers);
         $iterator[0] = 'wrong';
-        self::assertSame(1, $numbers[0]);
+
+        self::assertSame('wrong', $numbers[0]);
+    }
+
+    public function testForeachByReferenceAllowsNativeWritesWithoutTypeValidation(): void
+    {
+        $numbers = new IntegerArray([1]);
+
+        foreach ($numbers as &$value) {
+            $value = 'wrong';
+        }
+        unset($value);
+
+        self::assertSame('wrong', $numbers[0]);
+    }
+
+    public function testNativeIteratorWriteDoesNotDisableValidationOfTypedArrayWrites(): void
+    {
+        $numbers = new IntegerArray([1]);
+        $numbers->getIterator()[0] = 'wrong';
+        self::assertSame('wrong', $numbers[0]);
+
+        $this->expectException(TypeError::class);
+        $numbers[0] = 'also wrong';
     }
 
     public function testUnserializationCannotInjectWrongTypes(): void
