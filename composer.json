@@ -26,6 +26,9 @@
     "php": ">=8.0",
     "ext-json": "*"
   },
+  "replace": {
+    "typedarray/typedarray": "self.version"
+  },
   "autoload": {
     "psr-4": {
       "TypedArray\\": "src/"
