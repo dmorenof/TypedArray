@@ -5,7 +5,7 @@ All notable changes will be documented here. Version numbering follows [Semantic
 ## Unreleased (`develop`)
 
 ### Added
-- Staged Composer package identity `php-typed-array/php-typed-array` (not published yet).
+- Staged Composer package identity `php-typed-array/php-typed-array` (not published yet), with a `replace` mapping for compatible consumers of `typedarray/typedarray`.
 - MIT license and contribution/security policies.
 - PHPUnit regression suite with a PHP 8.0–8.5 CI matrix.
 - PHPDoc generics for typed collections and initial PHPStan analysis.
@@ -19,7 +19,7 @@ All notable changes will be documented here. Version numbering follows [Semantic
 - String conversion no longer calls `trigger_error()` with an invalid error constant.
 
 ### Known limitations
-- External `ArrayIterator` wrappers can mutate native `ArrayObject` storage without invoking validation. This requires an API-level redesign to eliminate completely.
+- Native SPL iterator writes and `foreach` by reference may modify `ArrayObject` storage without invoking the explicit validators. This behavior is intentionally preserved in the compatible API, tested and documented.
 - No stable release of the changes above has been published.
 
 ## 1.0.2 — 2024-12-28
