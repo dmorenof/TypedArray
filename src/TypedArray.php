@@ -7,13 +7,14 @@ use JsonSerializable;
 use TypeError;
 
 /**
- * An abstract class representing a type-safe array of items with enforced validations.
+ * An abstract ArrayObject-based collection with runtime-validated writes.
  *
- * This class extends ArrayObject and validates items through its public write methods.
+ * Construction, explicit write methods and unserialization validate item types.
+ * Native SPL iterator writes and foreach-by-reference access ArrayObject's
+ * inherited storage directly and do not invoke these validators. This native
+ * interoperability is intentionally preserved in compatible 1.x versions.
  *
- * IMPORTANT: Inherited SPL iteration wrappers can access ArrayObject's native
- * storage directly. Until a future major version replaces that storage, this
- * class cannot guarantee type safety for arbitrary external ArrayIterator wrappers.
+ * See docs/compatibility.md for the exact runtime validation contract.
  *
  * @template TValue
  * @extends ArrayObject<array-key, TValue>
