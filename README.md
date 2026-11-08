@@ -13,6 +13,9 @@ ArrayObject-based typed collections for PHP 8+, validating construction and expl
 > registered and released on Packagist. Do not install the new name until it is live.
 >
 > The PHP namespace stays `TypedArray\\` so existing application code remains compatible.
+> The new package stages Composer's `replace: { "typedarray/typedarray": "self.version" }`
+> for compatible consumers; see the [release and migration plan](docs/releasing.md).
+> Consumers are not migrated automatically.
 
 ## Installation
 
