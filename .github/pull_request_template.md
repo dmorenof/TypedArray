@@ -16,4 +16,3 @@ Describe the behavioral change, affected types and any user-facing documentation
 
 - [ ] No new stable tag or Packagist publication is created by this PR.
 - [ ] `master` is not bypassed.
-- [ ] For a package rename, new Packagist namespace availability and migration of existing consumers have been verified.
