@@ -16,23 +16,36 @@ use TypeError;
  *
  * See docs/compatibility.md for the exact runtime validation contract.
  *
+ * The accepted type is declared in `$expected_type`: one type (`int`, `User::class`), a union (`int|string`,
+ * `User|null`) or a nullable (`?int`). See docs/types.md.
+ *
  * @template TValue
  * @extends ArrayObject<array-key, TValue>
  */
 abstract class TypedArray extends ArrayObject implements JsonSerializable
 {
-    private const DEFAULT_PHP_TYPES = [
-        'boolean',
-        'integer',
-        'double',
-        'string',
-        'array',
-        'object',
-        'resource',
-        'NULL',
-        'unknown type',
-        'resource (closed)',
+    /** Names that stand for a built-in type, each with the name it is normalized to. */
+    private const BUILTIN = [
+        'int' => 'integer', 'integer' => 'integer',
+        'float' => 'double', 'double' => 'double',
+        'string' => 'string',
+        'bool' => 'boolean', 'boolean' => 'boolean',
+        'array' => 'array',
+        'object' => 'object',
+        'resource' => 'resource',
+        'resource (closed)' => 'resource (closed)',
+        'null' => 'NULL',
+        'unknown type' => 'unknown type',
+        'mixed' => 'mixed',
+        'callable' => 'callable',
+        'iterable' => 'iterable',
+        'false' => 'false',
+        'true' => 'true',
     ];
+
+    /** @var array<string, list<string>> The alternatives of each declaration, parsed once. */
+    private static array $parsed = [];
+
     protected string $expected_type;
 
     /**
@@ -47,9 +60,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
             throw new TypeError('The expected type must be defined in the implementing class.');
         }
 
-        if (!in_array($this->expected_type, self::DEFAULT_PHP_TYPES) && !class_exists($this->expected_type) && !interface_exists($this->expected_type)) {
-            throw new TypeError('The expected type must be a valid primitive type, class name, or interface name.');
-        }
+        $this->accepted();
 
         foreach ($items as $item) {
             $this->validate($item);
@@ -67,36 +78,100 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     protected function validate(mixed $value): void
     {
-        $type = gettype($value);
-
-        if ($this->isInvalidType($type, $value)) {
-            $actual_type = $type === 'object' && $this->expected_type !== 'object' ? get_debug_type($value) : $type;
-            $this->throwTypeError($actual_type);
+        if ($this->accepts($value)) {
+            return;
         }
+        $type = gettype($value);
+        $this->throwTypeError($type === 'object' && !in_array('object', $this->accepted(), true) ? get_debug_type($value) : $type);
+    }
+
+    /** Whether a value would be accepted. Never throws. */
+    public function accepts(mixed $value): bool
+    {
+        foreach ($this->accepted() as $type) {
+            if (self::matches($type, $value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** The type declaration as written in the subclass. */
+    public function getExpectedType(): string
+    {
+        return $this->expected_type;
     }
 
     /**
-     * Checks whether the given type and value don't match the expected type.
+     * A typed array of any declared type, without writing a subclass.
      *
-     * The method determines if the provided type is invalid based on the expected type.
-     * It cross-verifies against default PHP types or checks if the value is an instance
-     * of the expected class when dealing with objects.
-     *
-     * @param string $type The type of the value being checked.
-     * @param mixed $value The value to be validated against the expected type.
-     * @return bool Returns true if the type or value is invalid; otherwise, false.
-     * @throws TypeError
+     * @param array<array-key, mixed> $items
+     * @return GenericArray<mixed>
      */
-    private function isInvalidType(string $type, mixed $value): bool
+    public static function of(string $type, array $items = []): GenericArray
     {
-        // If expected a default type
-        if (in_array($this->expected_type, self::DEFAULT_PHP_TYPES)) {
-            return $type !== $this->expected_type;
-        } else if ($type === 'object') {
-            return !($value instanceof $this->expected_type);
-        }
+        return new GenericArray($type, $items);
+    }
 
-        return true;
+    /**
+     * The items as a plain array, for the functions that only accept one.
+     *
+     * @return array<array-key, TValue>
+     */
+    public function toArray(): array
+    {
+        return $this->getArrayCopy();
+    }
+
+    /**
+     * The declaration split into alternatives, each a normalized built-in name or a class or interface name.
+     *
+     * @return list<string>
+     */
+    private function accepted(): array
+    {
+        return self::$parsed[$this->expected_type] ??= self::parse($this->expected_type);
+    }
+
+    /** @return list<string> */
+    private static function parse(string $declaration): array
+    {
+        $names = explode('|', str_starts_with($declaration, '?') ? substr($declaration, 1) . '|null' : $declaration);
+        $types = [];
+        foreach ($names as $name) {
+            $name = trim($name);
+            $builtin = self::BUILTIN[strtolower($name)] ?? null;
+            if ($builtin === null) {
+                $name = ltrim($name, '\\');
+                if ($name === '' || !(class_exists($name) || interface_exists($name))) {
+                    throw new TypeError('The expected type must be a valid primitive type, class name, or interface name.');
+                }
+            }
+            $types[] = $builtin ?? $name;
+        }
+        return array_values(array_unique($types));
+    }
+
+    private static function matches(string $type, mixed $value): bool
+    {
+        return match ($type) {
+            'integer' => is_int($value),
+            'double' => is_float($value),
+            'string' => is_string($value),
+            'boolean' => is_bool($value),
+            'array' => is_array($value),
+            'object' => is_object($value),
+            'resource' => is_resource($value),
+            'resource (closed)' => gettype($value) === 'resource (closed)',
+            'NULL' => $value === null,
+            'unknown type' => gettype($value) === 'unknown type',
+            'mixed' => true,
+            'callable' => is_callable($value),
+            'iterable' => is_iterable($value),
+            'false' => $value === false,
+            'true' => $value === true,
+            default => $value instanceof $type,
+        };
     }
 
     /**
