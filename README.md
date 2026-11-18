@@ -1,6 +1,6 @@
 # Simple Typed Array
 
-Simple abstract class for typed Arrays with a set of classes for the different basic types.
+Typed arrays for PHP: lists and maps that only accept one type, or a union of types such as `int|string`.
 
 ## Installation
 
@@ -12,7 +12,7 @@ To install the library, execute the following code:
 
 ### Manual
 
-Download the library from https://github.com/dmorenof/TypedArray
+Requires PHP 8.1 or later. Download the library from https://github.com/dmorenof/TypedArray
 
 Include all the files from the "installation path/src"
 
@@ -31,6 +31,41 @@ Include all the files from the "installation path/src"
     }
     
     autoload($installation_path . DIRECTORY_SEPARATOR . 'src');
+
+## Declaring a type
+
+Extend `TypedArray\TypedArray` and set `$expected_type`, or create one without a subclass:
+
+```php
+use TypedArray\{TypedArray, IntegerArray};
+
+class UserArray extends TypedArray { protected string $expected_type = User::class; }
+
+$ids = new IntegerArray([1, 2]);                       // ready-made: Integer, String, Double, Boolean, Array, Object, Resource
+$mixed = new TypedArray\GenericArray('int|string', [1, 'a']);
+$users = TypedArray::of(User::class, [$ada]);          // same, as a factory
+```
+
+| Declaration | Accepts |
+| --- | --- |
+| `int`, `float`, `string`, `bool`, `array`, `object`, `resource`, `null`, `callable`, `iterable`, `mixed`, `false`, `true` | that type |
+| `integer`, `double`, `boolean`, `NULL` | the same, with the names `gettype()` uses |
+| `User::class`, an interface, an enum | instances of it (subclasses and implementations too) |
+| `int\|string`, `User\|null` | any member of the union |
+| `?int` | the type or `null` |
+
+Values are never converted: `1` is not a `float`. Every way an item can enter is checked: the constructor, `append()`, `[]`, `exchangeArray()` and `unserialize()`. `accepts($value)` tells whether a value would pass without throwing.
+
+## Using it like an array
+
+PHP does not allow extending the `array` type, so a typed array extends `ArrayObject`: it can be counted, iterated, spread (`[...$a]`), read and written with `[]`, `isset`/`unset`, passed to `json_encode()` and cast with `(array)`. For functions that need a real array use `toArray()`:
+
+```php
+sort_by_name(...$users);          // spread works
+array_map(fn ($u) => $u->name, $users->toArray());
+```
+
+A parameter declared `array` does not accept it; declare it `iterable` or `\Traversable` instead.
 
 ## Examples of Usage
 Are you sick of typing your arrays with comments that are working in your IDEs, but your code still allows mixed values?
