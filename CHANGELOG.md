@@ -1,24 +1,27 @@
 # Changelog
 
-## [2.0.0]
+All notable changes will be documented here. Version numbering follows [Semantic Versioning](https://semver.org/).
+
+## Unreleased (`develop`)
 
 ### Added
-- Union types in `$expected_type`: `int|string`, `User|null`, and `?int`.
-- `callable`, `iterable`, `mixed`, `false`, `true` and the PHP names `int`, `float`, `bool` (the `gettype()` names still work).
-- Interfaces are valid types (before, only classes and enums were).
-- `GenericArray` and `TypedArray::of($type, $items)`: a typed array without writing a subclass.
-- `accepts($value)`, `toArray()`, `getExpectedType()`.
-- Tests, static analysis (PHPStan max) and CI for PHP 8.1–8.4.
+- Staged Composer package identity `php-typed-array/php-typed-array` (not published yet), with a `replace` mapping for compatible consumers of `typedarray/typedarray`.
+- MIT license and contribution/security policies.
+- PHPUnit regression suite with a PHP 8.0–8.5 CI matrix.
+- PHPDoc generics for typed collections and initial PHPStan analysis.
+- Coverage report generation, minimum coverage enforcement, static-analysis type inference checks, and Dependabot configuration.
 
-### Fixed
-- `exchangeArray()` accepted any value without checking it. It now checks first and leaves the array unchanged on failure. `unserialize()` also checks.
-- `(string) $typedArray` always threw a `ValueError` on PHP 8 (`trigger_error()` refuses `E_NOTICE`). It now raises the "Array to string conversion" user warning and returns the class name.
+### Fixed in development
+- Type validation before `exchangeArray()` replaces items.
+- Validation after native `ArrayObject` unserialization.
+- Support for class/interface-based collections.
+- Correct distinction between open and closed resources.
+- String conversion no longer calls `trigger_error()` with an invalid error constant.
 
-### Changed (why this is a major release)
-- Requires PHP 8.1 or later.
-- The error message names the given type with PHP's names (`int`, `null`, the class) instead of `gettype()` names (`integer`, `NULL`).
-- The unknown-type placeholders `unknown type` and `resource (closed)` are no longer accepted as expected types.
-- The declared type is now validated on construction for every form above; an unknown name still throws a `TypeError`.
+### Known limitations
+- Native SPL iterator writes and `foreach` by reference may modify `ArrayObject` storage without invoking the explicit validators. This behavior is intentionally preserved in the compatible API, tested and documented.
+- No stable release of the changes above has been published.
 
-## [1.0.2] and earlier
-See the Git history.
+## 1.0.2 — 2024-12-28
+
+Existing stable release. Historical changes predate this curated changelog; see Git history and tags for the complete record.

@@ -1,6 +1,21 @@
-# Simple Typed Array
+# PHP Typed Array
 
-Typed arrays for PHP: lists and maps that only accept one type, or a union of types such as `int|string`.
+[![CI](https://github.com/dmorenof/TypedArray/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/dmorenof/TypedArray/actions/workflows/ci.yml)
+[![Packagist](https://img.shields.io/packagist/v/typedarray/typedarray)](https://packagist.org/packages/typedarray/typedarray)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+
+ArrayObject-based typed collections for PHP 8+, validating construction and explicit writes. Native SPL iterator writes and `foreach` by reference can change the stored type without validation; see the [runtime validation contract](docs/compatibility.md).
+
+> **Package-name migration:** The development branch declares the future Composer
+> package name `php-typed-array/php-typed-array`. The currently published
+> stable 1.0.2 remains `typedarray/typedarray` until the new package is
+> registered and released on Packagist. Do not install the new name until it is live.
+>
+> The PHP namespace stays `TypedArray\\` so existing application code remains compatible.
+> The new package stages Composer's `replace: { "typedarray/typedarray": "self.version" }`
+> for compatible consumers; see the [release and migration plan](docs/releasing.md).
+> Consumers are not migrated automatically.
 
 ## Installation
 
@@ -12,7 +27,7 @@ To install the library, execute the following code:
 
 ### Manual
 
-Requires PHP 8.1 or later. Download the library from https://github.com/dmorenof/TypedArray
+Download the library from https://github.com/dmorenof/TypedArray
 
 Include all the files from the "installation path/src"
 
@@ -31,41 +46,6 @@ Include all the files from the "installation path/src"
     }
     
     autoload($installation_path . DIRECTORY_SEPARATOR . 'src');
-
-## Declaring a type
-
-Extend `TypedArray\TypedArray` and set `$expected_type`, or create one without a subclass:
-
-```php
-use TypedArray\{TypedArray, IntegerArray};
-
-class UserArray extends TypedArray { protected string $expected_type = User::class; }
-
-$ids = new IntegerArray([1, 2]);                       // ready-made: Integer, String, Double, Boolean, Array, Object, Resource
-$mixed = new TypedArray\GenericArray('int|string', [1, 'a']);
-$users = TypedArray::of(User::class, [$ada]);          // same, as a factory
-```
-
-| Declaration | Accepts |
-| --- | --- |
-| `int`, `float`, `string`, `bool`, `array`, `object`, `resource`, `null`, `callable`, `iterable`, `mixed`, `false`, `true` | that type |
-| `integer`, `double`, `boolean`, `NULL` | the same, with the names `gettype()` uses |
-| `User::class`, an interface, an enum | instances of it (subclasses and implementations too) |
-| `int\|string`, `User\|null` | any member of the union |
-| `?int` | the type or `null` |
-
-Values are never converted: `1` is not a `float`. Every way an item can enter is checked: the constructor, `append()`, `[]`, `exchangeArray()` and `unserialize()`. `accepts($value)` tells whether a value would pass without throwing.
-
-## Using it like an array
-
-PHP does not allow extending the `array` type, so a typed array extends `ArrayObject`: it can be counted, iterated, spread (`[...$a]`), read and written with `[]`, `isset`/`unset`, passed to `json_encode()` and cast with `(array)`. For functions that need a real array use `toArray()`:
-
-```php
-sort_by_name(...$users);          // spread works
-array_map(fn ($u) => $u->name, $users->toArray());
-```
-
-A parameter declared `array` does not accept it; declare it `iterable` or `\Traversable` instead.
 
 ## Examples of Usage
 Are you sick of typing your arrays with comments that are working in your IDEs, but your code still allows mixed values?
@@ -194,3 +174,36 @@ try {
     echo "Caught exception: " . $TypeError->getMessage(); // Validation error message
 }
 ```
+
+## License
+
+Released under the [MIT License](LICENSE). Copyright (c) 2024-2026 David Moreno Falero.
+
+## Contributing and maintenance
+
+Contributions and bug reports are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the branching workflow, compatibility expectations, and local checks.
+
+The stable Composer package is currently `typedarray/typedarray`. The `master` branch and Git version tags are used for stable releases; `develop` is used for ongoing development. Automated PHPUnit tests and continuous integration are configured on `develop`. A manual release workflow is staged on `develop`; production publication requires branch protections, a protected release environment and explicit approval.
+
+## Tests and continuous integration
+
+Install development dependencies and run the PHPUnit suite:
+
+```bash
+composer install
+composer test
+```
+
+The [CI workflow](.github/workflows/ci.yml) validates Composer metadata, checks PHP syntax, and runs PHPUnit on PHP 8.0 through 8.5 for pushes and pull requests targeting `develop` or `master`.
+
+The [KnownLimitationsTest.php](tests/KnownLimitationsTest.php) suite documents the intentionally writable SPL paths with executable tests: `getIterator()`, external `ArrayIterator` wrappers, and `foreach` by reference. The [runtime validation contract](docs/compatibility.md) defines exactly which writes are checked.
+
+## More documentation
+
+- [Typed SDK object collections](docs/custom-types.md)
+- [Compatibility and type-safety limits](docs/compatibility.md)
+- [Maintainer release process](docs/releasing.md)
+- [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+
+Run `composer analyse` for static analysis. CI enforces at least 95% line coverage of the currently included source and generates a downloadable coverage report. The [CI workflow](.github/workflows/ci.yml) reports the authoritative status for each PHP version.
