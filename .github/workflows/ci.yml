@@ -79,7 +79,7 @@ jobs:
       - name: Enforce minimum code coverage
         run: php tools/check-coverage.php coverage.xml 95
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: phpunit-coverage-php84
           path: coverage.xml
