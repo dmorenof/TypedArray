@@ -1,6 +1,6 @@
 {
-  "name": "php-typed-array/php-typed-array",
-  "description": "Runtime-validated typed collections for PHP 8+, including scalar values, arrays, and class instances.",
+  "name": "typedarray/typedarray",
+  "description": "Runtime-validated typed collections for PHP 8+: one type, or a union such as int|string.",
   "type": "library",
   "keywords": [
     "typed-array",
@@ -25,9 +25,6 @@
   "require": {
     "php": ">=8.0",
     "ext-json": "*"
-  },
-  "replace": {
-    "typedarray/typedarray": "self.version"
   },
   "autoload": {
     "psr-4": {

@@ -7,15 +7,21 @@
 
 ArrayObject-based typed collections for PHP 8+, validating construction and explicit writes. Native SPL iterator writes and `foreach` by reference can change the stored type without validation; see the [runtime validation contract](docs/compatibility.md).
 
-> **Package-name migration:** The development branch declares the future Composer
-> package name `php-typed-array/php-typed-array`. The currently published
-> stable 1.0.2 remains `typedarray/typedarray` until the new package is
-> registered and released on Packagist. Do not install the new name until it is live.
->
-> The PHP namespace stays `TypedArray\\` so existing application code remains compatible.
-> The new package stages Composer's `replace: { "typedarray/typedarray": "self.version" }`
-> for compatible consumers; see the [release and migration plan](docs/releasing.md).
-> Consumers are not migrated automatically.
+## Declaring a type
+
+Extend `TypedArray\TypedArray` and set `$expected_type`, or create one without a subclass:
+
+```php
+use TypedArray\{TypedArray, IntegerArray, GenericArray};
+
+class UserArray extends TypedArray { protected string $expected_type = User::class; }
+
+$ids   = new IntegerArray([1, 2]);                // ready-made classes for each basic type
+$mixed = new GenericArray('int|string', [1, 'a']);
+$users = TypedArray::of(User::class, [$ada]);     // the same, as a factory
+```
+
+`int|string`, `User|null` and `?int` are accepted, as are `int`, `float`, `bool`, `callable`, `iterable` and `mixed` besides the names `gettype()` uses. Details and the full table: [docs/types.md](docs/types.md).
 
 ## Installation
 
