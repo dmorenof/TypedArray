@@ -43,8 +43,31 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
         'true' => 'true',
     ];
 
+    /** @var array<string, string> The test of each built-in type that one function settles. */
+    private const TESTS = [
+        'integer' => 'is_int', 'double' => 'is_float', 'string' => 'is_string', 'boolean' => 'is_bool',
+        'array' => 'is_array', 'object' => 'is_object', 'NULL' => 'is_null',
+    ];
+
+    /** @var array<string, true> Built-in types a value's `gettype()` alone decides. */
+    private const KINDS = ['integer' => true, 'double' => true, 'string' => true, 'boolean' => true, 'array' => true, 'object' => true, 'NULL' => true];
+
+    /** @var array<string, string> Every normalized built-in name. */
+    private const BUILTIN_NORMAL = [
+        'integer' => 'integer', 'double' => 'double', 'string' => 'string', 'boolean' => 'boolean', 'array' => 'array',
+        'object' => 'object', 'resource' => 'resource', 'resource (closed)' => 'resource (closed)', 'NULL' => 'NULL',
+        'unknown type' => 'unknown type', 'mixed' => 'mixed', 'callable' => 'callable', 'iterable' => 'iterable',
+        'false' => 'false', 'true' => 'true',
+    ];
+
     /** @var array<string, list<string>> The alternatives of each declaration, parsed once. */
     private static array $parsed = [];
+
+    /** @var array<string, array{string, mixed}> How each declaration is checked, worked out once. */
+    private static array $plans = [];
+
+    /** @var array<class-string, bool> Whether a subclass keeps the library's own `validate()` and `accepts()`. */
+    private static array $stock = [];
 
     protected string $expected_type;
 
@@ -60,11 +83,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
             throw new TypeError('The expected type must be defined in the implementing class.');
         }
 
-        $this->accepted();
-
-        foreach ($items as $item) {
-            $this->validate($item);
-        }
+        $this->checkAll($items);
 
         parent::__construct($items);
     }
@@ -81,14 +100,25 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
         if ($this->accepts($value)) {
             return;
         }
-        $type = gettype($value);
-        $this->throwTypeError($type === 'object' && !in_array('object', $this->accepted(), true) ? get_debug_type($value) : $type);
+        $type = \gettype($value);
+        $this->throwTypeError($type === 'object' && !\in_array('object', $this->accepted(), true) ? \get_debug_type($value) : $type);
     }
 
     /** Whether a value would be accepted. Never throws. */
     public function accepts(mixed $value): bool
     {
-        foreach ($this->accepted() as $type) {
+        [$mode, $data] = self::$plans[$this->expected_type] ?? $this->plan();
+        switch ($mode) {
+            case 'test':
+                return $data($value);
+            case 'class':
+                return $value instanceof $data;
+            case 'kinds':
+                return isset($data[\gettype($value)]);
+            case 'any':
+                return true;
+        }
+        foreach ($data as $type) {
             if (self::matches($type, $value)) {
                 return true;
             }
@@ -96,10 +126,187 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
         return false;
     }
 
+    /**
+     * How a declaration is checked, decided once: a single `is_*` test, a single class, a set of `gettype()` names, or
+     * the alternatives one by one.
+     *
+     * @return array{string, mixed}
+     */
+    private function plan(): array
+    {
+        $types = $this->accepted();
+        $type = $types[0];
+        $plan = match (true) {
+            \count($types) === 1 && $type === 'mixed' => ['any', null],
+            \count($types) === 1 && isset(self::TESTS[$type]) => ['test', self::TESTS[$type]],
+            \count($types) === 1 && !isset(self::BUILTIN_NORMAL[$type]) => ['class', $type],
+            ($kinds = self::kinds($types)) !== null => ['kinds', $kinds],
+            default => ['loop', $types],
+        };
+        return self::$plans[$this->expected_type] = $plan;
+    }
+
+    /**
+     * Checks a whole list. A class that keeps the library's own checks gets one tight loop for the common declarations;
+     * one that overrides `validate()` or `accepts()` is asked about each item, as ever. Either way the first bad item
+     * is reported by `validate()`, so the message is the same.
+     *
+     * @param array<array-key, mixed> $items
+     */
+    private function checkAll(array $items): void
+    {
+        $types = $this->accepted();
+        if (!(self::$stock[static::class] ??= $this->keepsStockChecks())) {
+            foreach ($items as $item) {
+                $this->validate($item);
+            }
+            return;
+        }
+        $type = $types[0];
+        $count = \count($types);
+        $bad = null;
+        if ($count === 1 && $type === 'mixed') {
+            return;
+        }
+        if ($count === 1 && $type === 'integer') {
+            foreach ($items as $item) {
+                if (!\is_int($item)) {
+                    $bad = [$item];
+                    break;
+                }
+            }
+        } elseif ($count === 1 && $type === 'string') {
+            foreach ($items as $item) {
+                if (!\is_string($item)) {
+                    $bad = [$item];
+                    break;
+                }
+            }
+        } elseif ($count === 1 && ($function = self::TESTS[$type] ?? null) !== null) {
+            foreach ($items as $item) {
+                if (!$function($item)) {
+                    $bad = [$item];
+                    break;
+                }
+            }
+        } elseif ($count === 1 && !isset(self::BUILTIN_NORMAL[$type])) {
+            foreach ($items as $item) {
+                if (!$item instanceof $type) {
+                    $bad = [$item];
+                    break;
+                }
+            }
+        } elseif (($kinds = self::kinds($types)) !== null) {
+            foreach ($items as $item) {
+                if (!isset($kinds[\gettype($item)])) {
+                    $bad = [$item];
+                    break;
+                }
+            }
+        } else {
+            foreach ($items as $item) {
+                if (!$this->accepts($item)) {
+                    $bad = [$item];
+                    break;
+                }
+            }
+        }
+        if ($bad !== null) {
+            $this->validate($bad[0]);
+        }
+    }
+
+    /**
+     * The `gettype()` names a declaration accepts, when the type of a value alone decides it (no class, `callable`,
+     * `iterable`, `false` or `true` among the alternatives); null otherwise.
+     *
+     * @param list<string> $types
+     * @return array<string, true>|null
+     */
+    private static function kinds(array $types): ?array
+    {
+        $kinds = [];
+        foreach ($types as $type) {
+            if (!isset(self::KINDS[$type])) {
+                return null;
+            }
+            $kinds[$type === 'integer' ? 'integer' : $type] = true;
+        }
+        return $kinds;
+    }
+
+    private function keepsStockChecks(): bool
+    {
+        return (new \ReflectionMethod($this, 'validate'))->getDeclaringClass()->getName() === self::class
+            && (new \ReflectionMethod($this, 'accepts'))->getDeclaringClass()->getName() === self::class;
+    }
+
     /** The type declaration as written in the subclass. */
     public function getExpectedType(): string
     {
         return $this->expected_type;
+    }
+
+    /** Whether the collection holds no items. */
+    public function isEmpty(): bool
+    {
+        return $this->count() === 0;
+    }
+
+    /**
+     * The first item, or null when empty.
+     *
+     * @return TValue|null
+     */
+    public function first(): mixed
+    {
+        foreach ($this as $item) {
+            return $item;
+        }
+        return null;
+    }
+
+    /**
+     * The last item, or null when empty.
+     *
+     * @return TValue|null
+     */
+    public function last(): mixed
+    {
+        $items = $this->getArrayCopy();
+        return $items === [] ? null : $items[array_key_last($items)];
+    }
+
+    /**
+     * The items the callback keeps (those that are truthy when there is none), in a collection of the same class and
+     * type. Keys are preserved.
+     *
+     * @param (callable(TValue): bool)|null $keep
+     * @return static
+     */
+    public function filter(?callable $keep = null): static
+    {
+        $items = $this->getArrayCopy();
+        $copy = clone $this;
+        $copy->exchangeArray($keep === null ? array_filter($items) : array_filter($items, $keep));
+        return $copy;
+    }
+
+    /**
+     * The result of the callback for each item, as a plain array (the results need not be of the declared type). Keys
+     * are preserved.
+     *
+     * @template TResult
+     * @param callable(TValue): TResult $transform
+     * @return array<array-key, TResult>
+     */
+    public function map(callable $transform): array
+    {
+        $results = [];
+        foreach ($this->getArrayCopy() as $key => $item) {
+            $results[$key] = $transform($item);
+        }
+        return $results;
     }
 
     /**
@@ -155,19 +362,19 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
     private static function matches(string $type, mixed $value): bool
     {
         return match ($type) {
-            'integer' => is_int($value),
-            'double' => is_float($value),
-            'string' => is_string($value),
-            'boolean' => is_bool($value),
-            'array' => is_array($value),
-            'object' => is_object($value),
-            'resource' => is_resource($value),
-            'resource (closed)' => gettype($value) === 'resource (closed)',
+            'integer' => \is_int($value),
+            'double' => \is_float($value),
+            'string' => \is_string($value),
+            'boolean' => \is_bool($value),
+            'array' => \is_array($value),
+            'object' => \is_object($value),
+            'resource' => \is_resource($value),
+            'resource (closed)' => \gettype($value) === 'resource (closed)',
             'NULL' => $value === null,
-            'unknown type' => gettype($value) === 'unknown type',
+            'unknown type' => \gettype($value) === 'unknown type',
             'mixed' => true,
-            'callable' => is_callable($value),
-            'iterable' => is_iterable($value),
+            'callable' => \is_callable($value),
+            'iterable' => \is_iterable($value),
             'false' => $value === false,
             'true' => $value === true,
             default => $value instanceof $type,
@@ -202,8 +409,8 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     public function append(mixed $value): void
     {
-        $this->validate($value);
-        parent::append($value);
+        // offsetSet() validates, and is what ArrayObject::append() calls: validating here too would check every value twice.
+        $this->offsetSet(null, $value);
     }
 
     /**
@@ -233,9 +440,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
             ? $array
             : ($array instanceof \Traversable ? iterator_to_array($array) : (array) $array);
 
-        foreach ($items as $item) {
-            $this->validate($item);
-        }
+        $this->checkAll($items);
 
         return parent::exchangeArray($items);
     }
@@ -255,9 +460,7 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
             throw new TypeError('Cannot change the expected array type during unserialization.');
         }
 
-        foreach ($this->getArrayCopy() as $item) {
-            $this->validate($item);
-        }
+        $this->checkAll($this->getArrayCopy());
     }
 
     /**
