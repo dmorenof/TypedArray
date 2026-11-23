@@ -409,8 +409,8 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     public function append(mixed $value): void
     {
-        $this->validate($value);
-        parent::append($value);
+        // offsetSet() validates, and is what ArrayObject::append() calls: validating here too would check every value twice.
+        $this->offsetSet(null, $value);
     }
 
     /**

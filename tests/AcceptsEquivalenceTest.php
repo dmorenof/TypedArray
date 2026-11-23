@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace TypedArray\Tests;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 use TypedArray\GenericArray;
@@ -22,7 +21,7 @@ final class AcceptsEquivalenceTest extends TestCase
         'int|string', 'string|int', '?int', 'int|null', '?string', 'bool|null', 'int|float', 'string|array', 'array|object',
         'stdClass', 'ArrayObject', 'Countable', 'Traversable', 'stdClass|null', '?ArrayObject', 'Countable|string', 'ArrayObject|int',
         'object|int', 'iterable|int', 'callable|null', 'callable|int', 'false|int', 'true|false', 'false|null', 'mixed|int',
-        'resource|null', 'int|string|null', 'int|float|string|bool', 'stdClass|ArrayObject', 'iterable|callable',
+        'resource|null', 'float|callable', 'bool|callable', 'array|callable', 'object|callable', 'null|callable', 'string|callable', 'int|callable', 'resource|callable', 'int|string|null', 'int|float|string|bool', 'stdClass|ArrayObject', 'iterable|callable',
     ];
 
     /** @return array<string, mixed> */
@@ -71,63 +70,100 @@ final class AcceptsEquivalenceTest extends TestCase
         return false;
     }
 
-    /** @return iterable<string, array{string}> */
-    public static function declarations(): iterable
+    public function testAcceptsAgreesWithTheOracleForEveryDeclarationAndValue(): void
     {
         foreach (self::DECLARATIONS as $declaration) {
-            yield $declaration => [$declaration];
-        }
-    }
-
-    #[DataProvider('declarations')]
-    public function testAcceptsAgreesWithTheOracleForEveryValue(string $declaration): void
-    {
-        $array = new GenericArray($declaration);
-        foreach (self::values() as $label => $value) {
-            self::assertSame(self::oracle($declaration, $value), $array->accepts($value), "$declaration with $label");
-        }
-    }
-
-    #[DataProvider('declarations')]
-    public function testAListIsBuiltExactlyWhenEveryItemIsAccepted(string $declaration): void
-    {
-        $values = self::values();
-        foreach ($values as $label => $value) {
-            $accepted = self::oracle($declaration, $value);
-            try {
-                $built = new GenericArray($declaration, [$value, $value]);
-                self::assertTrue($accepted, "$declaration built a list of $label that it does not accept");
-                self::assertCount(2, $built);
-            } catch (TypeError $error) {
-                self::assertFalse($accepted, "$declaration refused a list of $label that it accepts");
-                self::assertStringStartsWith('Incorrect array item. Must be of type ' . $declaration . ', ', $error->getMessage());
+            $array = new GenericArray($declaration);
+            foreach (self::values() as $label => $value) {
+                self::assertSame(self::oracle($declaration, $value), $array->accepts($value), "$declaration with $label");
             }
         }
     }
 
-    #[DataProvider('declarations')]
-    public function testOneBadItemAnywhereInAListRefusesTheWholeList(string $declaration): void
+    public function testAListIsBuiltExactlyWhenEveryItemIsAccepted(): void
     {
-        $good = null;
-        $bad = null;
-        foreach (self::values() as $value) {
-            self::oracle($declaration, $value) ? $good ??= [$value] : $bad ??= [$value];
+        foreach (self::DECLARATIONS as $declaration) {
+            foreach (self::values() as $label => $value) {
+                $accepted = self::oracle($declaration, $value);
+                try {
+                    $built = new GenericArray($declaration, [$value, $value]);
+                    self::assertTrue($accepted, "$declaration built a list of $label that it does not accept");
+                    self::assertCount(2, $built);
+                } catch (TypeError $error) {
+                    self::assertFalse($accepted, "$declaration refused a list of $label that it accepts");
+                    self::assertStringStartsWith('Incorrect array item. Must be of type ' . $declaration . ', ', $error->getMessage());
+                }
+            }
         }
-        if ($good === null || $bad === null) {
-            self::addToAssertionCount(1); // a declaration that accepts, or refuses, every value has no mixed list
-            return;
-        }
-        foreach ([[$bad[0], $good[0], $good[0]], [$good[0], $bad[0], $good[0]], [$good[0], $good[0], $bad[0]]] as $items) {
+    }
+
+    public function testOneBadItemAnywhereInAListRefusesTheWholeList(): void
+    {
+        foreach (self::DECLARATIONS as $declaration) {
+            $good = null;
+            $bad = null;
+            foreach (self::values() as $value) {
+                self::oracle($declaration, $value) ? $good ??= [$value] : $bad ??= [$value];
+            }
+            if ($good === null || $bad === null) {
+                continue; // a declaration that accepts, or refuses, every value has no mixed list
+            }
+            foreach ([[$bad[0], $good[0], $good[0]], [$good[0], $bad[0], $good[0]], [$good[0], $good[0], $bad[0]]] as $items) {
+                try {
+                    new GenericArray($declaration, $items);
+                    self::fail("$declaration accepted a list with one bad item");
+                } catch (TypeError) {
+                    self::addToAssertionCount(1);
+                }
+            }
+            $array = new GenericArray($declaration, [$good[0]]);
             try {
-                new GenericArray($declaration, $items);
-                self::fail("$declaration accepted a list with one bad item");
+                $array->exchangeArray([$good[0], $bad[0]]);
+                self::fail("$declaration exchanged in a list with one bad item");
             } catch (TypeError) {
                 self::addToAssertionCount(1);
             }
         }
-        $array = new GenericArray($declaration, [$good[0]]);
+    }
+
+    public function testASubclassThatOverridesTheChecksIsAskedAboutEveryItem(): void
+    {
+        $asked = [];
+        $array = new class (['a', 'b']) extends \TypedArray\TypedArray {
+            /** @var list<mixed> */
+            public static array $asked = [];
+            protected string $expected_type = 'int';
+
+            protected function validate(mixed $value): void
+            {
+                self::$asked[] = $value;
+            }
+        };
+        self::assertSame(['a', 'b'], $array::$asked);
+        $array->append('c');
+        self::assertSame(['a', 'b', 'c'], $array::$asked);
+        self::assertCount(3, $array, 'the override decides: nothing here refuses a string in an int collection');
+    }
+
+    public function testASubclassThatOverridesAcceptsIsAskedToo(): void
+    {
+        $array = new class ([2, 4]) extends \TypedArray\IntegerArray {
+            public function accepts(mixed $value): bool
+            {
+                return is_int($value) && $value % 2 === 0;
+            }
+        };
+        self::assertCount(2, $array);
         $this->expectException(TypeError::class);
-        $array->exchangeArray([$good[0], $bad[0]]);
+        new $array([1]);
+    }
+
+    public function testMixedAcceptsEverythingAndAnInterfaceOrCallableDeclarationIsChecked(): void
+    {
+        self::assertCount(3, new GenericArray('mixed', [1, 'a', null]));
+        self::assertCount(2, new GenericArray('Countable', [new \ArrayObject(), new \ArrayIterator([])]));
+        $this->expectException(TypeError::class);
+        new GenericArray('Countable', [new \stdClass()]);
     }
 
     public function testKeysAreKeptWhenAListIsBuilt(): void

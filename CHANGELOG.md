@@ -5,6 +5,7 @@ All notable changes will be documented here. Version numbering follows [Semantic
 ## Unreleased (`develop`)
 
 ### Changed
+- `append()` checked each value twice (it validated, then `ArrayObject::append()` called `offsetSet()`, which validates again). It now goes through `offsetSet()` once: about 30 % less per call.
 - Building a collection, `exchangeArray()` and unserialization check the whole list in one tight loop chosen from the declaration, instead of one method call per item: about 25× faster for 100 integers and 40× for 10,000, close to a hand-written `is_int` loop. Same rules, same error messages; a subclass that overrides `validate()` or `accepts()` is still asked about every item. `tools/bench.php` reproduces the numbers.
 
 ### Added
