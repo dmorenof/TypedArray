@@ -2,7 +2,7 @@
 
 All notable changes will be documented here. Version numbering follows [Semantic Versioning](https://semver.org/).
 
-## Unreleased (`develop`)
+## [1.3.0] — 2026-11-23
 
 ### Changed
 - `append()` checked each value twice (it validated, then `ArrayObject::append()` called `offsetSet()`, which validates again). It now goes through `offsetSet()` once: about 30 % less per call.
@@ -17,7 +17,7 @@ All notable changes will be documented here. Version numbering follows [Semantic
 - PHPDoc generics for typed collections and initial PHPStan analysis.
 - Coverage report generation, minimum coverage enforcement, static-analysis type inference checks, and Dependabot configuration.
 
-### Fixed in development
+### Fixed
 - Type validation before `exchangeArray()` replaces items.
 - Validation after native `ArrayObject` unserialization.
 - Support for class/interface-based collections.
