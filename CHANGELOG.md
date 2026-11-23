@@ -4,6 +4,9 @@ All notable changes will be documented here. Version numbering follows [Semantic
 
 ## Unreleased (`develop`)
 
+### Changed
+- Building a collection, `exchangeArray()` and unserialization check the whole list in one tight loop chosen from the declaration, instead of one method call per item: about 25× faster for 100 integers and 40× for 10,000, close to a hand-written `is_int` loop. Same rules, same error messages; a subclass that overrides `validate()` or `accepts()` is still asked about every item. `tools/bench.php` reproduces the numbers.
+
 ### Added
 - Union and nullable types in `$expected_type` (`int|string`, `User|null`, `?int`), the names `int`, `float`, `bool`, `callable`, `iterable`, `mixed`, `false` and `true`, `GenericArray`, `TypedArray::of()`, `accepts()`, `getExpectedType()` and `toArray()`. All additive: existing declarations behave as before. See `docs/types.md`.
 - MIT license and contribution/security policies.
