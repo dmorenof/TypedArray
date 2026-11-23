@@ -55,4 +55,13 @@ final class ConvenienceTest extends TestCase
         $array = new IntegerArray(['a' => 1, 'b' => 2]);
         self::assertSame(['a' => '1!', 'b' => '2!'], $array->map(static fn (int $v): string => $v . '!'));
     }
+
+    public function testFloatArrayAcceptsFloatsOnly(): void
+    {
+        $array = new \TypedArray\FloatArray([1.5]);
+        $array[] = 2.5;
+        self::assertCount(2, $array);
+        $this->expectException(\TypeError::class);
+        $array[] = 1;
+    }
 }

@@ -101,6 +101,7 @@ Default valid types are:
 - TypedArray\ArrayArray 
 - TypedArray\BooleanArray
 - TypedArray\DoubleArray
+- TypedArray\FloatArray (the same as DoubleArray, named as PHP names the type)
 - TypedArray\IntegerArray
 - TypedArray\ObjectArray
 - TypedArray\ResourceArray
