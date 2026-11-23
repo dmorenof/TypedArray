@@ -63,6 +63,9 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
     /** @var array<string, list<string>> The alternatives of each declaration, parsed once. */
     private static array $parsed = [];
 
+    /** @var array<string, array{string, mixed}> How each declaration is checked, worked out once. */
+    private static array $plans = [];
+
     /** @var array<class-string, bool> Whether a subclass keeps the library's own `validate()` and `accepts()`. */
     private static array $stock = [];
 
@@ -104,12 +107,43 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
     /** Whether a value would be accepted. Never throws. */
     public function accepts(mixed $value): bool
     {
-        foreach ($this->accepted() as $type) {
+        [$mode, $data] = self::$plans[$this->expected_type] ?? $this->plan();
+        switch ($mode) {
+            case 'test':
+                return $data($value);
+            case 'class':
+                return $value instanceof $data;
+            case 'kinds':
+                return isset($data[\gettype($value)]);
+            case 'any':
+                return true;
+        }
+        foreach ($data as $type) {
             if (self::matches($type, $value)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * How a declaration is checked, decided once: a single `is_*` test, a single class, a set of `gettype()` names, or
+     * the alternatives one by one.
+     *
+     * @return array{string, mixed}
+     */
+    private function plan(): array
+    {
+        $types = $this->accepted();
+        $type = $types[0];
+        $plan = match (true) {
+            \count($types) === 1 && $type === 'mixed' => ['any', null],
+            \count($types) === 1 && isset(self::TESTS[$type]) => ['test', self::TESTS[$type]],
+            \count($types) === 1 && !isset(self::BUILTIN_NORMAL[$type]) => ['class', $type],
+            ($kinds = self::kinds($types)) !== null => ['kinds', $kinds],
+            default => ['loop', $types],
+        };
+        return self::$plans[$this->expected_type] = $plan;
     }
 
     /**
