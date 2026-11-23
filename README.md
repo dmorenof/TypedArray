@@ -23,6 +23,22 @@ $users = TypedArray::of(User::class, [$ada]);     // the same, as a factory
 
 `int|string`, `User|null` and `?int` are accepted, as are `int`, `float`, `bool`, `callable`, `iterable` and `mixed` besides the names `gettype()` uses. Details and the full table: [docs/types.md](docs/types.md).
 
+## Reading and filtering
+
+```php
+$ids = new IntegerArray(['a' => 1, 'b' => 2, 'c' => 3]);
+
+$ids->isEmpty();                              // false
+$ids->first();                                // 1      (null when empty)
+$ids->last();                                 // 3
+$ids->filter(fn (int $id) => $id > 1);        // an IntegerArray: ['b' => 2, 'c' => 3]
+$ids->map(fn (int $id) => "#$id");            // a plain array: ['a' => '#1', ...]
+$ids->toArray();                              // the items as a plain array
+$ids->accepts('x');                           // false, never throws
+```
+
+`filter()` returns a collection of the same class and type, keys preserved; `map()` returns a plain array because its results need not be of the declared type.
+
 ## Installation
 
 ### Composer

@@ -247,6 +247,68 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
         return $this->expected_type;
     }
 
+    /** Whether the collection holds no items. */
+    public function isEmpty(): bool
+    {
+        return $this->count() === 0;
+    }
+
+    /**
+     * The first item, or null when empty.
+     *
+     * @return TValue|null
+     */
+    public function first(): mixed
+    {
+        foreach ($this as $item) {
+            return $item;
+        }
+        return null;
+    }
+
+    /**
+     * The last item, or null when empty.
+     *
+     * @return TValue|null
+     */
+    public function last(): mixed
+    {
+        $items = $this->getArrayCopy();
+        return $items === [] ? null : $items[array_key_last($items)];
+    }
+
+    /**
+     * The items the callback keeps (those that are truthy when there is none), in a collection of the same class and
+     * type. Keys are preserved.
+     *
+     * @param (callable(TValue): bool)|null $keep
+     * @return static
+     */
+    public function filter(?callable $keep = null): static
+    {
+        $items = $this->getArrayCopy();
+        $copy = clone $this;
+        $copy->exchangeArray($keep === null ? array_filter($items) : array_filter($items, $keep));
+        return $copy;
+    }
+
+    /**
+     * The result of the callback for each item, as a plain array (the results need not be of the declared type). Keys
+     * are preserved.
+     *
+     * @template TResult
+     * @param callable(TValue): TResult $transform
+     * @return array<array-key, TResult>
+     */
+    public function map(callable $transform): array
+    {
+        $results = [];
+        foreach ($this->getArrayCopy() as $key => $item) {
+            $results[$key] = $transform($item);
+        }
+        return $results;
+    }
+
     /**
      * A typed array of any declared type, without writing a subclass.
      *

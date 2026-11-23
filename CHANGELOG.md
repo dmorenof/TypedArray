@@ -9,6 +9,7 @@ All notable changes will be documented here. Version numbering follows [Semantic
 
 ### Added
 - Union and nullable types in `$expected_type` (`int|string`, `User|null`, `?int`), the names `int`, `float`, `bool`, `callable`, `iterable`, `mixed`, `false` and `true`, `GenericArray`, `TypedArray::of()`, `accepts()`, `getExpectedType()` and `toArray()`. All additive: existing declarations behave as before. See `docs/types.md`.
+- `isEmpty()`, `first()`, `last()`, `filter()` (same class and type, keys kept) and `map()` (plain array). A subclass that already defines a method with one of these names keeps its own, provided the signature is compatible.
 - MIT license and contribution/security policies.
 - PHPUnit regression suite with a PHP 8.0–8.5 CI matrix.
 - PHPDoc generics for typed collections and initial PHPStan analysis.
