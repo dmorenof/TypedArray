@@ -2,6 +2,12 @@
 
 All notable changes will be documented here. Version numbering follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- A collection whose type is set in the constructor (`$this->expected_type = 'int'`) could not be unserialized: PHP raised "must not be accessed before initialization". The type is now read from the payload and must be valid.
+- A failed `__unserialize()` no longer leaves the object half restored: the payload is validated on an isolated instance first (no subclass constructor runs), then restored.
+
 ## [1.3.0] — 2026-11-23
 
 ### Changed
