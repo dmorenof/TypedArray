@@ -79,13 +79,25 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     public function __construct(array $items = [])
     {
-        if (empty($this->expected_type)) {
-            throw new TypeError('The expected type must be defined in the implementing class.');
-        }
+        $this->validateExpectedType();
 
         $this->checkAll($items);
 
         parent::__construct($items);
+    }
+
+    /**
+     * Checks that the expected type is defined and well formed.
+     *
+     * @throws TypeError If it is empty or cannot be parsed.
+     */
+    private function validateExpectedType(): void
+    {
+        if (empty($this->expected_type)) {
+            throw new TypeError('The expected type must be defined in the implementing class.');
+        }
+
+        $this->accepted();
     }
 
     /**
@@ -452,11 +464,23 @@ abstract class TypedArray extends ArrayObject implements JsonSerializable
      */
     public function __unserialize(array $data): void
     {
-        // Subclasses normally declare a default expected_type. Preserve this
-        // contract even if the serialized properties have been tampered with.
-        $declaredType = $this->expected_type;
+        // Restore into an isolated instance so a failed validation cannot alter this object's
+        // storage, properties, flags or iterator class, and without running a subclass
+        // constructor. A type defined in the constructor is uninitialized here: it must come
+        // from the payload, and be valid.
+        $restored = (new \ReflectionClass($this))->newInstanceWithoutConstructor();
+        $restored->validateSerializedData($data, $this->expected_type ?? null);
         parent::__unserialize($data);
-        if ($this->expected_type !== $declaredType) {
+    }
+
+    /** @param array<mixed> $data */
+    private function validateSerializedData(array $data, ?string $declaredType): void
+    {
+        parent::__unserialize($data);
+        $this->validateExpectedType();
+
+        // A subclass that declares its type must keep it, even if the payload was tampered with.
+        if ($declaredType !== null && $this->expected_type !== $declaredType) {
             throw new TypeError('Cannot change the expected array type during unserialization.');
         }
 
